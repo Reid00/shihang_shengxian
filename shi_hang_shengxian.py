@@ -55,7 +55,7 @@ def signin(customerguid, accesstoken):
     }
 
     with requests.Session() as s:
-        res = s.post(url, json=querystring, headers=headers)
+        # res = s.post(url, json=querystring, headers=headers)
         res = s.get(auto_login, json=get_payload, headers=headers)
         print(res.status_code)
         print(res.json())
