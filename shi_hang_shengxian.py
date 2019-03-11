@@ -30,13 +30,10 @@ def login(Phone='18896510223', PassWord='584a58a1d207b8b2983d9cf45c98018d'):
 
 
 def signin(customerguid, accesstoken):
-    # url = 'https://activity-3.m.duiba.com.cn/signactivity/doSign'
-    url = 'https://wechat.34580.com/authorize?'
-    auto_login = 'https://api1.34580.com/sz/duiba/autoLogin?'
-    get_sign_info = 'https://activity-3.m.duiba.com.cn/signactivity/getSignInfo'
-
-    do_sign = 'https://activity-3.m.duiba.com.cn/signactivity/doSign'
-
+    url = 'https://api1.34580.com/sz/Logs/LogV2?'
+    # auto_login = 'https://api1.34580.com/sz/duiba/autoLogin?'
+    # get_sign_info = 'https://activity-3.m.duiba.com.cn/signactivity/getSignInfo'
+    # do_sign = 'https://activity-3.m.duiba.com.cn/signactivity/doSign'
     headers = {
 
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36',
@@ -44,37 +41,21 @@ def signin(customerguid, accesstoken):
     }
 
     querystring = {
-        'cityId': 1,
-        'accesstoken': accesstoken,
-        'customerguid': customerguid,
-    }
-    get_payload = {
+        # 'cityId': 1,
         'sourcetype': 9,
         'accesstoken': accesstoken,
         'customerguid': customerguid,
     }
-
     with requests.Session() as s:
-        # res = s.post(url, json=querystring, headers=headers)
-        res = s.get(auto_login, json=get_payload, headers=headers)
+        res = s.post(url, json=querystring, headers=headers)
         print(res.status_code)
-        print(res.json())
-        message = res.json()['msg']
-        print(message)
-        payload = {
-
-            'signActivityId': '90'
-        }
-        res_get_sign = s.post(get_sign_info, json=payload, headers=headers)
-
-        res_do_sign = s.post(do_sign, json=payload, headers=headers)
-        data = res_do_sign.json()
-        is_error = data['success']
+        data = res.json()
+        print(data)
+        is_error = data['Error']
         if is_error:
-            print(data['signInfoVO'])
-            print('签到成功，获取{}个积分'.format(data['Data']['GetPoints']))
+            print(data['Message'])
         else:
-            print('sign in failed.')
+            print('签到成功，获取{}个积分'.format(data['Data']['GetPoints']))
 
 
 if __name__ == '__main__':
