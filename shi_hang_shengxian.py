@@ -1,7 +1,7 @@
 import requests, json, sys
 
 
-def login(Phone='18896510223', PassWord='584a58a1d207b8b2983d9cf45c98018d'):
+def login(Phone='***', PassWord='***'):
     url = 'https://api1.34580.com/sz/Sign/SignInV2'
     headers = {
 
