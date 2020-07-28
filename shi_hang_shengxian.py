@@ -5,7 +5,7 @@ class ShiHang:
     # 食行生鲜 登录签到脚本
 
     faker = Faker()
-    def __init__(self,user='your user account', password='your password'):
+    def __init__(self,user='18896510223', password='**'):
         #　初始化
         self.user = user
         self.password = password
@@ -42,6 +42,7 @@ class ShiHang:
         print('开始签到...')
         url = 'https://api1.34580.com/sz/Logs/LogV2?'
         do_sign = 'https://activity-3.m.duiba.com.cn/signactivity/doSign'
+        sign_up = 'https://wechatx.34580.com/sz/SignUp/CustomerSignUp'
         cookie = {
             '_ac': 'eyJhaWQiOjUyODE5LCJjaWQiOjI5MzQ1NjA2MjN9',
             'acw_tc': '76b20fe715522894476124948e62309daddb6eee59da9076ed6fc2e34bc95c',
@@ -72,14 +73,22 @@ class ShiHang:
             else:
                 print(f'go sign in successfully with message: {data["Message"]}')
 
-            res_dosign = s.post(do_sign, cookies=cookie, headers=self.headers, data=forms)
-            dosign_cont = res_dosign.json()
-            
+            res_dosign1 = s.post(do_sign, cookies=cookie, headers=self.headers, data=forms)
+            dosign_cont = res_dosign1.json()
             if dosign_cont['success']:
                 print('today sign status {}'.format(dosign_cont['signInfoVO']['todaySigned']))
                 # print(f'sign in successfully, get {dosign_cont["Data"]["GetPoints"]} points')
             else:
                 print(f'sign in failed with message: {dosign_cont["message"]}')
+
+            res_dosign = s.post(sign_up, cookies=cookie, headers=self.headers, data=forms)
+            data = res_dosign.json()
+            is_error = data['Error']
+            if is_error:
+                print(f"签到失败，原因:{data['Message']}")
+            else:
+                print(f'签到成功，获得积分{data["Data"]["GetPoints"]}')
+            
 
 if __name__ == '__main__':
     client = ShiHang()
