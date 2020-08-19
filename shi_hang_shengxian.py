@@ -1,96 +1,93 @@
-import requests, json, sys
+# -*- encoding: utf-8 -*-
+'''
+@File        :shi_hang_shengxian.py
+@Time        :2020/08/17 16:00:49
+@Author      :Reid
+@Version     :1.0
+@Desc        :苏州食行生鲜签到脚本
+'''
+
+
+import requests
+import json
 from faker import Faker
 
-class ShiHang:
-    # 食行生鲜 登录签到脚本
 
-    faker = Faker()
-    def __init__(self,user='18896510223', password='**'):
-        #　初始化
-        self.user = user
-        self.password = password
-        self.headers = {'User-Agent':self.faker.user_agent()}
+faker = Faker()
 
-    def login(self):
-        # 登录食行生鲜
-        print('开始登录...')
-        url = 'https://api1.34580.com/sz/Sign/SignInV2'
-
-        payload = {
-            'DeviceId':'',
-            'PassWord': self.password,
-            'Phone': self.user,
-            'SourceType': '9',
-            'ZhuGeDeviceMd5':''
-        }
-        print(payload)
-        res = requests.post(url, json=payload, headers=self.headers)
-
-        print('response is:',res.json())
-        data = res.json()
-        is_error = data['Error']
-        if is_error:
-            print('Login Failed, {}'.format(data['Message']))
-            sys.exit(1)
-        else:
-            print('Login Successfully.')
-            return data['Data']['CustomerGuid'], data['Data']['AccessToken']
+def login(user='18896510223', password='584a58a1d207b8b2983d9cf45c98018d'):
+    """
+    登陆页面
+    :param user: 登陆的账号
+    :param password: passwd
+    """
+    url = 'https://api1.34580.com/sz/Sign/SignInV2?sourcetype=9'
+    print('start login...')
+    payload = {
+        'DeviceId':'',
+        'PassWord':password,
+        'Phone': user,
+        'SourceType': '9',
+        'ZhuGeDeviceMD5':''
+    }
+    headers = {
+        'User-Agent': faker.user_agent(),
+        'Referer':'https://wechatx.34580.com/mart/'
+    }
+    res = requests.post(url, data=json.dumps(payload), headers=headers)
+    data = json.loads(res.text)
+    if not data.get('Error'):
+        print('login successfully!')
+        return data['Data']['CustomerGuid'], data['Data']['AccessToken']
+    return None, None
 
 
-    def signin(self,customerguid, accesstoken):
-        # 进行脚本签到
-        print('开始签到...')
-        url = 'https://api1.34580.com/sz/Logs/LogV2?'
-        do_sign = 'https://activity-3.m.duiba.com.cn/signactivity/doSign'
-        sign_up = 'https://wechatx.34580.com/sz/SignUp/CustomerSignUp'
-        cookie = {
-            '_ac': 'eyJhaWQiOjUyODE5LCJjaWQiOjI5MzQ1NjA2MjN9',
-            'acw_tc': '76b20fe715522894476124948e62309daddb6eee59da9076ed6fc2e34bc95c',
-            'tokenId': 'b8cd760480a00623d717930c139217c3',
-            'wdata3': 'jaH8Bq8XcNMD5YguCwRQ1xEb44U5Fuy5u7ZESkAzK4s2DWGtZYqXpuyZSYb8oB7rohMZvnrdafqvBp5jaekHcKgwgWm9hkkUCFYVw1xUUFByLP1FAyFAoFkF28ZU1k5gcBgY8oAgsCPxq7znG2Uk3uyGTfu6rBa6xTNqbdP8',
-            'wdata4': 'UJg2alH4X2YBGV4bUc2Dxjf7rpXb4bExzJdKKn42Prr0WEkqBhLdpH49b7Rrnm8sMfPW6KUG4H9ciu1iI+/RgJecoRk+7PEKu+B1OWNiP1qGDFh4ttahxfKEZXvuNbLXiv7RY+UmbNOHbHeeEyiT2wk2HWXoMLGuHl0AmhSlAys=',
-        }
-        forms = {
-            'id': 90
-        }
-        querystring = {
-            # 'cityId': 1,
-            'sourcetype': 9,
-            'accesstoken': accesstoken,
-            'customerguid': customerguid,
-        }
-
-        with requests.Session() as s:
-            res = s.post(url, json=querystring, headers=self.headers)
-            print(res.status_code)
-
-            data = res.json()
+def sign_in(CustomerGuid, AccessToken):
+    """
+    签到脚本
+    """
+    # url = f'https://api1.34580.com/sz/Logs/LogV2?accesstoken={AccessToken}&customerguid={CustomerGuid}&sourcetype=9'
+    auto_login = 'https://api1.34580.com/sz/duiba/autoLogin'
+    sign_action = 'https://activity-3.m.duiba.com.cn/signactivity/doSign'
+    headers = {
+        'User-Agent': faker.user_agent(),
+        'Refer':'https://wechatx.34580.com/duiba/',
+    }
+    params = {
+        'customerguid': CustomerGuid,
+        'accesstoken': AccessToken,
+        'sourcetype': '9'
+    }
+    sign_form = {
+        'id':90
+    }
+    with requests.Session() as sess:
+        print('start go to auto login page...')
+        log_res = sess.get(auto_login, params=params, headers=headers)
+        data = json.loads(log_res.text)
+        #response is {"Error":0,"Message":"","Data":"https://activity-3.m.duiba.com.cn/autoLogin/autologin?uid=adaf2997-7867-43c0-999f-42e1399ab4b4&credits=37&sign=f5da5ae159c82be342e30b46b72b0abb&appKey=4JG2CKkeAVxFzRK7iTWuP9imPtNK&timestamp=1597740357184&","Exception":null}
+        if not data.get('Error'):
+            new_url = data['Data']
+            new_response = sess.get(new_url, allow_redirects=False)
+            if new_response.status_code == 302:
+                jar = new_response.cookies
+                redirect_url = new_response.headers['Location']
+                print('redirect_url: ', redirect_url)
+                res2 = sess.get(redirect_url, cookies=jar)
+            cookies = new_response.cookies.get_dict()
+            print('cookies:', cookies)
+            print('start sign in...')
+            headers = {
+                'User-Agent': faker.user_agent(),
+                'Refer': redirect_url,
+            }
+            sign_res = sess.post(sign_action, data=sign_form, cookies=cookies, headers=headers)
+            data = sign_res.text
             print(data)
 
-            is_error = data['Error']
-            if is_error:
-                print(f'go sign in page failed with error message: {data["Message"]}')
-            else:
-                print(f'go sign in successfully with message: {data["Message"]}')
-
-            res_dosign1 = s.post(do_sign, cookies=cookie, headers=self.headers, data=forms)
-            dosign_cont = res_dosign1.json()
-            if dosign_cont['success']:
-                print('today sign status {}'.format(dosign_cont['signInfoVO']['todaySigned']))
-                # print(f'sign in successfully, get {dosign_cont["Data"]["GetPoints"]} points')
-            else:
-                print(f'sign in failed with message: {dosign_cont["message"]}')
-
-            res_dosign = s.post(sign_up, cookies=cookie, headers=self.headers, data=forms)
-            data = res_dosign.json()
-            is_error = data['Error']
-            if is_error:
-                print(f"签到失败，原因:{data['Message']}")
-            else:
-                print(f'签到成功，获得积分{data["Data"]["GetPoints"]}')
-            
-
 if __name__ == '__main__':
-    client = ShiHang()
-    customerguid, accesstoken = client.login()
-    client.signin(customerguid, accesstoken)
+    CustomerGuid, AccessToken = login()
+    sign_in(CustomerGuid, AccessToken)
+    # ShiHang = ShiHang()
+    # A, B  = ShiHang.login()
+    # ShiHang.signin(A, B)
