@@ -15,7 +15,7 @@ from faker import Faker
 
 faker = Faker()
 
-def login(user='18896510223', password='584a58a1d207b8b2983d9cf45c98018d'):
+def login(user='AA', password='**'):
     """
     登陆页面
     :param user: 登陆的账号
